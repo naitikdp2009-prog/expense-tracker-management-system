@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Expense Tracker Management System{% endblock %}</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% if active_theme == 'light' %}light-theme{% endif %}">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div>
+                    <div class="brand-text">EXPENSE TRACKER</div>
+                    <span class="brand-tag">MINOR PROJECT REVIEW-2</span>
+                </div>
+            </div>
+
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="{{ url_for('dashboard.dashboard_view') }}" class="nav-link {% if request.endpoint == 'dashboard.dashboard_view' %}active{% endif %}">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('expenses.add_expense') }}" class="nav-link {% if request.endpoint == 'expenses.add_expense' %}active{% endif %}">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Add Expense</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('expenses.list_expenses') }}" class="nav-link {% if request.endpoint == 'expenses.list_expenses' %}active{% endif %}">
+                        <i class="fas fa-receipt"></i>
+                        <span>Expenses</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('income.manage_income') }}" class="nav-link {% if request.endpoint == 'income.manage_income' %}active{% endif %}">
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <span>Income</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('budget.manage_budget') }}" class="nav-link {% if request.endpoint == 'budget.manage_budget' %}active{% endif %}">
+                        <i class="fas fa-calculator"></i>
+                        <span>Budget</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('reports.reports_view') }}" class="nav-link {% if request.endpoint == 'reports.reports_view' %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Reports</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ai.ai_expenses_view') }}" class="nav-link {% if request.endpoint == 'ai.ai_expenses_view' %}active{% endif %}">
+                        <i class="fas fa-brain"></i>
+                        <span>AI Insights</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ai.receipt_scanner_view') }}" class="nav-link {% if request.endpoint == 'ai.receipt_scanner_view' %}active{% endif %}">
+                        <i class="fas fa-camera"></i>
+                        <span>Receipt Scanner</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ai.purchase_advisor_view') }}" class="nav-link {% if request.endpoint == 'ai.purchase_advisor_view' %}active{% endif %}">
+                        <i class="fas fa-balance-scale"></i>
+                        <span>Purchase Advisor</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('ai.simulator_view') }}" class="nav-link {% if request.endpoint == 'ai.simulator_view' %}active{% endif %}">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>What-If Simulator</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('chat.chat_view') }}" class="nav-link {% if request.endpoint == 'chat.chat_view' %}active{% endif %}">
+                        <i class="fas fa-robot"></i>
+                        <span>Chat Assistant</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ url_for('settings.settings_view') }}" class="nav-link {% if request.endpoint == 'settings.settings_view' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item" style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                    <a href="{{ url_for('main.about_view') }}" class="nav-link {% if request.endpoint == 'main.about_view' %}active{% endif %}" style="color: #a5b4fc;">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Project Overview</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="page-title">
+                    <h1>{% block header_title %}Dashboard Overview{% endblock %}</h1>
+                    <p>{% block header_subtitle %}Personal Finance & Budget Control System{% endblock %}</p>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Light/Dark Theme">
+                        <i class="fas {% if active_theme == 'light' %}fa-sun{% else %}fa-moon{% endif %}"></i>
+                    </button>
+                    <a href="{{ url_for('expenses.add_expense') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </a>
+                </div>
+            </header>
+
+            <!-- Flash Notification Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert-box alert-{{ category if category != 'error' else 'danger' }}">
+                            <i class="fas fa-info-circle"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

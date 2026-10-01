@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}AI Spending Insights | Expense Tracker System{% endblock %}
+{% block header_title %}AI-Powered Expense Analysis Engine{% endblock %}
+{% block header_subtitle %}Automated pattern detection, spending spikes, and budget pacing insights{% endblock %}
+
+{% block content %}
+<!-- Engine Mode Banner -->
+<div class="table-card" style="background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(16,185,129,0.1)); border: 1px solid rgba(99,102,241,0.3);">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <span class="cat-badge" style="background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4);">
+                <i class="fas fa-check-circle"></i> Active Engine: Rule-Based Intelligent Analytics Engine
+            </span>
+            <h3 style="margin-top: 10px; font-size: 1.2rem;">Deterministic Pattern Analysis Engine</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 4px;">
+                Analyzes month-over-month category variance, daily velocity pacing, recurring micro-transactions, and budget limits offline without paid API dependencies.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('settings.settings_view') }}" class="btn btn-secondary btn-sm"><i class="fas fa-key"></i> External API Config</a>
+        </div>
+    </div>
+</div>
+
+<!-- Insights Display Grid -->
+<div class="charts-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+    {% for insight in insights %}
+    <div class="stat-card" style="border-top: 4px solid var(--accent-{{ insight.color }});">
+        <div class="stat-card-header">
+            <span class="stat-title">{{ insight.type|replace('_', ' ')|title }}</span>
+            <div class="stat-icon icon-{{ insight.color }}"><i class="fas {{ insight.icon }}"></i></div>
+        </div>
+        <h3 style="font-size: 1.1rem; margin-bottom: 8px;">{{ insight.title }}</h3>
+        <p style="font-size: 0.9rem; color: var(--text-muted); line-height: 1.5;">
+            {{ insight.text }}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Rule-based Spending Breakdown Summary Table -->
+<div class="table-card">
+    <div class="card-title" style="margin-bottom: 16px;"><i class="fas fa-lightbulb text-warning"></i> Recommended Optimization Actions</div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="alert-box alert-info">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Reduce Micro-Transactions:</strong> Consolidate small daily food & beverage spending into a weekly fixed allowance to save up to ₹800 monthly.
+            </div>
+        </div>
+        <div class="alert-box alert-success">
+            <i class="fas fa-check-circle"></i>
+            <div>
+                <strong>Budget Pacing:</strong> Maintain your current daily expenditure pacing below ₹{{ "{:,.2f}".format(summary.monthly_budget / 30) }}/day to maximize savings.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

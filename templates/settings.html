@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Settings | Expense Tracker System{% endblock %}
+{% block header_title %}System Settings{% endblock %}
+{% block header_subtitle %}Configure currency symbols, UI theme, demo seed data, and external API keys{% endblock %}
+
+{% block content %}
+<div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+    <!-- Preferences Card -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-sliders-h text-primary"></i> Application Preferences</div>
+        
+        <form method="POST" action="{{ url_for('settings.settings_view') }}">
+            <div class="form-group">
+                <label class="form-label">Currency Symbol</label>
+                <select name="currency" class="form-control">
+                    <option value="₹" {% if settings.get('currency') == '₹' %}selected{% endif %}>₹ - Indian Rupee (INR)</option>
+                    <option value="$" {% if settings.get('currency') == '$' %}selected{% endif %}>$ - US Dollar (USD)</option>
+                    <option value="€" {% if settings.get('currency') == '€' %}selected{% endif %}>€ - Euro (EUR)</option>
+                    <option value="£" {% if settings.get('currency') == '£' %}selected{% endif %}>£ - British Pound (GBP)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Default Theme Mode</label>
+                <select name="theme" class="form-control">
+                    <option value="dark" {% if settings.get('theme') == 'dark' %}selected{% endif %}>Dark Mode (Default)</option>
+                    <option value="light" {% if settings.get('theme') == 'light' %}selected{% endif %}>Light Mode</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">AI Insights Engine Mode</label>
+                <select name="ai_provider" class="form-control">
+                    <option value="rule-based" {% if settings.get('ai_provider') == 'rule-based' %}selected{% endif %}>Rule-Based Engine (Free & Offline)</option>
+                    <option value="openai" {% if settings.get('ai_provider') == 'openai' %}selected{% endif %}>OpenAI API (Optional)</option>
+                    <option value="gemini" {% if settings.get('ai_provider') == 'gemini' %}selected{% endif %}>Google Gemini API (Optional)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Save Settings</button>
+        </form>
+    </div>
+
+    <!-- Presentation & Demo Data Tools Card -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-database text-warning"></i> Demo Data & Presentation Tools</div>
+        
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+            Use these controls during your college <strong>Minor Project Review-2</strong> presentation to reset or seed realistic transaction records into SQLite.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+            <button id="seedDataBtn" class="btn btn-success" style="padding: 14px;">
+                <i class="fas fa-seedling"></i> Seed / Reset Realistic Demo Data
+            </button>
+            <div style="font-size: 0.78rem; color: var(--text-muted);">
+                Populates 30+ transactions across Food, Transport, Education, Bills, Income sources, and active budgets.
+            </div>
+
+            <a href="{{ url_for('expenses.export_csv') }}" class="btn btn-secondary" style="padding: 14px; text-align: center; justify-content: center;">
+                <i class="fas fa-download"></i> Backup & Export Database to CSV
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const seedBtn = document.getElementById('seedDataBtn');
+    seedBtn.addEventListener('click', async () => {
+        if (!confirm('This will seed/reset demo financial data into SQLite. Proceed?')) return;
+        seedBtn.innerHTML = "<i class='fas fa-spinner fa-spin'></i> Seeding Data...";
+        seedBtn.disabled = true;
+
+        try {
+            const res = await fetch('/api/settings/seed-data', { method: 'POST' });
+            const data = await res.json();
+            alert(data.message);
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
+            alert('Error seeding demo data.');
+        } finally {
+            seedBtn.disabled = false;
+        }
+    });
+});
+</script>
+{% endblock %}

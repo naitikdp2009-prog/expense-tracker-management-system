@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Chat Assistant | Expense Tracker System{% endblock %}
+{% block header_title %}Financial Chat Assistant{% endblock %}
+{% block header_subtitle %}Ask conversational questions about your expenses, budgets, savings, and transactions{% endblock %}
+
+{% block content %}
+<div class="chat-container-card">
+    <div style="padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.1);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background-color: var(--accent-success);"></div>
+            <strong>Rule-Based Natural Language Query Engine</strong>
+        </div>
+        <span class="stat-title" style="font-size: 0.75rem;">SQLite Connected</span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="chat-bubble chat-bot">
+            Hello! I am your AI Financial Assistant. Ask me anything about your expenses, income, remaining budget, or spending trends!
+        </div>
+    </div>
+
+    <!-- Quick Prompt Suggestions -->
+    <div style="padding: 10px 16px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; overflow-x: auto; background: rgba(0,0,0,0.05);">
+        <button class="btn btn-secondary btn-sm chat-suggest-btn">How much did I spend this month?</button>
+        <button class="btn btn-secondary btn-sm chat-suggest-btn">What is my biggest expense category?</button>
+        <button class="btn btn-secondary btn-sm chat-suggest-btn">How much budget is remaining?</button>
+        <button class="btn btn-secondary btn-sm chat-suggest-btn">Show my recent expenses</button>
+        <button class="btn btn-secondary btn-sm chat-suggest-btn">How much did I spend on Food?</button>
+    </div>
+
+    <form class="chat-input-area" id="chatForm">
+        <input type="text" id="chatInput" class="form-control" placeholder="Ask a question (e.g. 'Can I afford to spend 2000 rupees?')..." autocomplete="off" required>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

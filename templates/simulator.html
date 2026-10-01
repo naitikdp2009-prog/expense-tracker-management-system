@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}What-If Simulator | Expense Tracker System{% endblock %}
+{% block header_title %}What-If Budget Simulator{% endblock %}
+{% block header_subtitle %}Simulate the financial impact of a potential purchase before committing money{% endblock %}
+
+{% block content %}
+<div class="charts-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Calculator Input Form -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-sliders-h text-primary"></i> Scenario Parameters</div>
+        
+        <form id="simulatorForm">
+            <div class="form-group">
+                <label class="form-label">Current Monthly Spending ({{ currency_symbol }})</label>
+                <input type="number" step="0.01" id="current_spending" class="form-control" value="{{ summary.monthly_expenses }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Monthly Budget Limit ({{ currency_symbol }})</label>
+                <input type="number" step="0.01" id="monthly_budget" class="form-control" value="{{ summary.monthly_budget }}" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Proposed Purchase Amount ({{ currency_symbol }})*</label>
+                <input type="number" step="0.01" min="1" id="purchase_amount" class="form-control" placeholder="e.g. 3500" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-calculator"></i> Run What-If Simulation
+            </button>
+        </form>
+    </div>
+
+    <!-- Comparison Display Card -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-exchange-alt text-warning"></i> Scenario Comparison (CURRENT vs AFTER)</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+            <!-- CURRENT Box -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md);">
+                <span class="cat-badge" style="background: rgba(99,102,241,0.2); color: #a5b4fc; margin-bottom: 12px;">CURRENT STATE</span>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Monthly Spending</div>
+                <div id="curSpendingVal" style="font-size: 1.4rem; font-weight: 700; margin-bottom: 8px;">{{ currency_symbol }}{{ "{:,.2f}".format(summary.monthly_expenses) }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Remaining Budget</div>
+                <div id="curRemVal" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-success);">{{ currency_symbol }}{{ "{:,.2f}".format(summary.remaining_budget) }}</div>
+                <div class="progress-bar-container" style="margin-top: 12px;">
+                    <div id="curBar" class="progress-bar-fill fill-info" style="width: {{ summary.budget_usage_pct }}%;"></div>
+                </div>
+            </div>
+
+            <!-- AFTER PURCHASE Box -->
+            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 20px; border-radius: var(--radius-md);">
+                <span class="cat-badge" style="background: rgba(245,158,11,0.2); color: #fde047; margin-bottom: 12px;">AFTER PURCHASE</span>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">New Total Spending</div>
+                <div id="newSpendingVal" style="font-size: 1.4rem; font-weight: 700; margin-bottom: 8px;">{{ currency_symbol }}{{ "{:,.2f}".format(summary.monthly_expenses) }}</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">New Remaining Budget</div>
+                <div id="newRemVal" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-success);">{{ currency_symbol }}{{ "{:,.2f}".format(summary.remaining_budget) }}</div>
+                <div class="progress-bar-container" style="margin-top: 12px;">
+                    <div id="newBar" class="progress-bar-fill fill-info" style="width: {{ summary.budget_usage_pct }}%;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="simulationAlert" class="alert-box alert-info">
+            <i class="fas fa-info-circle"></i>
+            <span id="simulationAlertText">Enter a proposed purchase amount on the left to see the instant budget impact comparison.</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const simulatorForm = document.getElementById('simulatorForm');
+    
+    simulatorForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            current_spending: document.getElementById('current_spending').value,
+            purchase_amount: document.getElementById('purchase_amount').value,
+            monthly_budget: document.getElementById('monthly_budget').value
+        };
+
+        try {
+            const res = await fetch('/api/simulator/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            document.getElementById('curSpendingVal').textContent = `₹${data.current.spending.toLocaleString('en-IN')}`;
+            document.getElementById('curRemVal').textContent = `₹${data.current.remaining.toLocaleString('en-IN')}`;
+            document.getElementById('curBar').style.width = `${Math.min(100, data.current.usage_pct)}%`;
+
+            document.getElementById('newSpendingVal').textContent = `₹${data.after.spending.toLocaleString('en-IN')}`;
+            document.getElementById('newRemVal').textContent = `₹${data.after.remaining.toLocaleString('en-IN')}`;
+            
+            const newBar = document.getElementById('newBar');
+            newBar.style.width = `${Math.min(100, data.after.usage_pct)}%`;
+            if (data.is_over_budget) {
+                newBar.className = 'progress-bar-fill fill-danger';
+            } else if (data.after.usage_pct >= 75) {
+                newBar.className = 'progress-bar-fill fill-warning';
+            } else {
+                newBar.className = 'progress-bar-fill fill-success';
+            }
+
+            const alertBox = document.getElementById('simulationAlert');
+            const alertText = document.getElementById('simulationAlertText');
+
+            if (data.is_over_budget) {
+                alertBox.className = 'alert-box alert-danger';
+                alertText.innerHTML = `<strong>OVER BUDGET ALERT:</strong> Making this purchase will exceed your monthly budget limit by <strong>₹${data.over_budget_amount.toLocaleString('en-IN')}</strong> (${data.after.usage_pct}% overall usage).`;
+            } else {
+                alertBox.className = 'alert-box alert-success';
+                alertText.innerHTML = `<strong>SAFE PURCHASE:</strong> You will remain within budget with <strong>₹${data.after.remaining.toLocaleString('en-IN')}</strong> left over for the month (${data.after.usage_pct}% used).`;
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Error computing simulation.");
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}AI Purchase Advisor | Expense Tracker System{% endblock %}
+{% block header_title %}Smart Purchase Advisor{% endblock %}
+{% block header_subtitle %}Evaluate planned purchases before spending money to prevent budget deficits{% endblock %}
+
+{% block content %}
+<div class="charts-grid" style="grid-template-columns: 1fr 1fr;">
+    <!-- Inputs Card -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-shopping-cart text-primary"></i> Planned Purchase Details</div>
+        
+        <form id="advisorForm">
+            <div class="form-group">
+                <label class="form-label">Product / Item Name*</label>
+                <input type="text" id="product_name" class="form-control" placeholder="e.g. Wireless Headphones, Smartwatch" required>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Price ({{ currency_symbol }})*</label>
+                    <input type="number" step="0.01" min="1" id="price" class="form-control" placeholder="e.g. 2499" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category*</label>
+                    <select id="category_name" class="form-control" required>
+                        {% for cat in categories %}
+                        <option value="{{ cat.name }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Classification*</label>
+                    <select id="need_or_want" class="form-control" required>
+                        <option value="want">Want (Discretionary)</option>
+                        <option value="need">Need (Essential)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Product Urgency*</label>
+                    <select id="urgency" class="form-control" required>
+                        <option value="low">Low (Can wait weeks)</option>
+                        <option value="medium">Medium (Needed this week)</option>
+                        <option value="high">High (Immediate necessity)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                <i class="fas fa-brain"></i> Generate Recommendation
+            </button>
+        </form>
+    </div>
+
+    <!-- Recommendation Output Card -->
+    <div class="table-card" id="outputCard" style="display: flex; flex-direction: column; justify-content: center; text-align: center; background: rgba(0,0,0,0.1);">
+        <div id="initialState">
+            <i class="fas fa-balance-scale fa-4x text-muted" style="margin-bottom: 16px;"></i>
+            <h3>Enter item details on the left</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 6px;">
+                The decision matrix will analyze your current balance ({{ currency_symbol }}{{ "{:,.2f}".format(summary.current_balance) }}), remaining monthly budget ({{ currency_symbol }}{{ "{:,.2f}".format(summary.remaining_budget) }}), and necessity score.
+            </p>
+        </div>
+
+        <div id="resultState" style="display: none;">
+            <div id="recommendationBadge" class="cat-badge" style="font-size: 1.4rem; padding: 10px 24px; border-radius: 50px; margin-bottom: 20px; display: inline-flex;">
+                <!-- BUY / WAIT / AVOID -->
+            </div>
+
+            <h3 id="resultTitle" style="margin-bottom: 12px;"></h3>
+            <p id="resultReason" style="font-size: 0.95rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px; text-align: left; background: var(--bg-primary); padding: 16px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></p>
+
+            <div style="text-align: left; background: rgba(99,102,241,0.1); padding: 16px; border-radius: var(--radius-sm); border: 1px solid rgba(99,102,241,0.3);">
+                <strong style="color: #a5b4fc;"><i class="fas fa-lightbulb"></i> Suggested Alternative Action:</strong>
+                <p id="resultAlternative" style="font-size: 0.88rem; margin-top: 4px; color: var(--text-main);"></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const advisorForm = document.getElementById('advisorForm');
+    
+    advisorForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const payload = {
+            product_name: document.getElementById('product_name').value,
+            price: document.getElementById('price').value,
+            category_name: document.getElementById('category_name').value,
+            need_or_want: document.getElementById('need_or_want').value,
+            urgency: document.getElementById('urgency').value
+        };
+
+        try {
+            const res = await fetch('/api/purchase-advisor/evaluate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            document.getElementById('initialState').style.display = 'none';
+            const resultState = document.getElementById('resultState');
+            resultState.style.display = 'block';
+
+            const badge = document.getElementById('recommendationBadge');
+            badge.textContent = `RECOMMENDATION: ${data.recommendation}`;
+            badge.style.background = `var(--accent-${data.badge_color})`;
+            badge.style.color = '#ffffff';
+
+            document.getElementById('resultTitle').textContent = `Evaluating "${data.product_name}" (₹${data.price.toLocaleString('en-IN')})`;
+            document.getElementById('resultReason').textContent = data.reason;
+            document.getElementById('resultAlternative').textContent = data.alternative_action;
+
+        } catch (err) {
+            console.error(err);
+            alert("Error generating recommendation.");
+        }
+    });
+});
+</script>
+{% endblock %}

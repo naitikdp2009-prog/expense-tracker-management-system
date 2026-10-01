@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Budget Manager | Expense Tracker System{% endblock %}
+{% block header_title %}Monthly Budget Control{% endblock %}
+{% block header_subtitle %}Configure overall and category-wise spending limits for {{ month_name }}{% endblock %}
+
+{% block content %}
+<!-- Overall Monthly Budget Section -->
+<div class="stats-grid">
+    <div class="stat-card" style="border-left: 4px solid var(--accent-primary);">
+        <div class="stat-card-header">
+            <span class="stat-title">Overall Monthly Limit</span>
+            <div class="stat-icon icon-budget"><i class="fas fa-calculator"></i></div>
+        </div>
+        <div class="stat-value">{{ currency_symbol }}{{ "{:,.2f}".format(overall_limit) }}</div>
+        <div class="stat-footer">Monthly target cap</div>
+    </div>
+
+    <div class="stat-card" style="border-left: 4px solid var(--accent-danger);">
+        <div class="stat-card-header">
+            <span class="stat-title">Current Spent Amount</span>
+            <div class="stat-icon icon-expense"><i class="fas fa-receipt"></i></div>
+        </div>
+        <div class="stat-value">{{ currency_symbol }}{{ "{:,.2f}".format(overall_spent) }}</div>
+        <div class="stat-footer">{{ overall_pct }}% of limit used</div>
+    </div>
+
+    <div class="stat-card" style="border-left: 4px solid var(--accent-success);">
+        <div class="stat-card-header">
+            <span class="stat-title">Remaining Budget</span>
+            <div class="stat-icon icon-savings"><i class="fas fa-piggy-bank"></i></div>
+        </div>
+        <div class="stat-value">{{ currency_symbol }}{{ "{:,.2f}".format(overall_remaining) }}</div>
+        <div class="stat-footer">Available headroom</div>
+    </div>
+</div>
+
+<div class="charts-grid" style="grid-template-columns: 1fr 2fr;">
+    <!-- Forms Card -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-cog text-primary"></i> Update Limits</div>
+
+        <!-- Overall Budget Form -->
+        <form method="POST" action="{{ url_for('budget.manage_budget') }}" style="margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color);">
+            <input type="hidden" name="action" value="set_overall">
+            <div class="form-group">
+                <label class="form-label">Overall Monthly Budget ({{ currency_symbol }})</label>
+                <input type="number" step="100" min="1" name="overall_limit" class="form-control" value="{{ overall_limit }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Save Overall Budget</button>
+        </form>
+
+        <!-- Category Budget Form -->
+        <form method="POST" action="{{ url_for('budget.manage_budget') }}">
+            <input type="hidden" name="action" value="set_category">
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category_id" class="form-control" required>
+                    {% for c in categories %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category Limit ({{ currency_symbol }})</label>
+                <input type="number" step="50" min="0" name="category_limit" class="form-control" placeholder="e.g. 5000" required>
+            </div>
+            <button type="submit" class="btn btn-secondary" style="width: 100%;"><i class="fas fa-plus"></i> Set Category Budget</button>
+        </form>
+    </div>
+
+    <!-- Category Budgets Status Cards Grid -->
+    <div class="table-card">
+        <div class="card-title" style="margin-bottom: 20px;"><i class="fas fa-tasks text-warning"></i> Category-wise Budgets</div>
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            {% for cb in category_budgets %}
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="cat-badge" style="background: {{ cb.color }}20; color: {{ cb.color }};">
+                            <i class="fas {{ cb.icon }}"></i> {{ cb.name }}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.9rem; font-weight: 700;">
+                        {{ currency_symbol }}{{ "{:,.2f}".format(cb.spent) }} /
+                        <span style="color: var(--text-muted);">{{ currency_symbol }}{{ "{:,.2f}".format(cb.limit) if cb.limit > 0 else 'No Limit' }}</span>
+                    </div>
+                </div>
+
+                {% if cb.limit > 0 %}
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill fill-{{ cb.status_class }}" style="width: {{ cb.pct if cb.pct <= 100 else 100 }}%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">
+                    <span>{{ cb.pct }}% Used</span>
+                    <span>Remaining: {{ currency_symbol }}{{ "{:,.2f}".format(cb.remaining) }}</span>
+                </div>
+                {% else %}
+                <div style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">No explicit limit set for this category.</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
